@@ -1,0 +1,2 @@
+indicadores,accuracy,precision,recall,f1_score
+sma,0.75,0.8,0.7,0.74
