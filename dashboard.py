@@ -8,7 +8,15 @@ st.set_page_config(layout="wide", page_title="Dashboard de Indicadores")
 st.title("📊 Análisis de Combinaciones de Indicadores Técnicos")
 
 DATA_DIR = "data"
+if not os.path.exists(DATA_DIR):
+    os.makedirs(DATA_DIR)
+
 csv_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".csv")]
+
+if not csv_files:
+    st.warning("No hay archivos CSV aún. Ejecuta combinador.py primero.")
+    st.stop()
+
 
 if not csv_files:
     st.warning("No hay archivos CSV en la carpeta /data.")

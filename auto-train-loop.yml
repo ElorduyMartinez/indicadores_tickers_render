@@ -1,0 +1,53 @@
+name: Loop combinador hasta completar
+
+on:
+  workflow_dispatch:  # Puedes lanzarlo manualmente desde la pestaña "Actions"
+
+jobs:
+  combinador-loop:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧬 Clonar repositorio
+        uses: actions/checkout@v3
+
+      - name: 🐍 Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🔁 Ejecutar combinador hasta terminar
+        run: |
+          import os
+          import time
+          import pandas as pd
+          import subprocess
+          from tickers import tickers
+
+          MAX_RUNS = 20  # Seguridad: max intentos por ejecución
+          LIMIT_PER_TICKER = 100  # Opcional: puedes hacer más de 100 por corrida
+
+          for ticker in tickers:
+              filename = f"data/resultados_{ticker.replace('=','')}.csv"
+              runs = 0
+              while runs < MAX_RUNS:
+                  subprocess.run(["python", "combinador.py", ticker], check=True)
+                  if os.path.exists(filename):
+                      df = pd.read_csv(filename)
+                      used = len(df["hash"].unique())
+                      total = 2 ** len(df["indicadores"].iloc[0].split(",")) - 1
+                      print(f"✅ {ticker}: {used}/{total}")
+                      if used >= total:
+                          break
+                  runs += 1
+                  time.sleep(1)
+
+        shell: python
+
+      - name: 💾 Subir resultados al repo
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add data/
+          git commit -m "🚀 Auto-update combinaciones completadas" || echo "No hay cambios"
+          git push
