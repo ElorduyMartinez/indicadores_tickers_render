@@ -4,39 +4,46 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
-# Configurar página
 st.set_page_config(layout="wide", page_title="Dashboard de Indicadores Técnicos")
 st.title("📊 Análisis de Combinaciones de Indicadores Técnicos")
 
-# Ruta de datos (ya existe gracias a .gitkeep)
 DATA_DIR = "data"
 
-if not os.path.exists(DATA_DIR):
-    st.error("❌ La carpeta 'data/' no existe. Verifica que esté en tu repositorio.")
+# 🛡 Crear carpeta si no existe (evita FileNotFoundError)
+try:
+    os.makedirs(DATA_DIR, exist_ok=True)
+except Exception as e:
+    st.error(f"❌ No se pudo crear la carpeta '{DATA_DIR}': {e}")
     st.stop()
 
-csv_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".csv")]
+# ✅ Leer CSVs solo si la carpeta ya existe
+try:
+    csv_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".csv")]
+except FileNotFoundError as e:
+    st.error(f"❌ No se encontró la carpeta 'data/': {e}")
+    st.stop()
 
+# 🚫 Si no hay CSVs, avisar y salir
 if not csv_files:
     st.warning("⚠️ No hay archivos CSV todavía. Ejecuta combinador.py o espera que el workflow los genere.")
     st.stop()
 
-# Selector de archivo
+# 📂 Seleccionar archivo
 file_selected = st.selectbox("📁 Selecciona un activo:", csv_files)
 df = pd.read_csv(os.path.join(DATA_DIR, file_selected))
 
-# Asegurar que las columnas métricas sean numéricas
+# Convertir métricas a numérico
 for col in ["accuracy", "precision", "recall", "f1_score"]:
     df[col] = pd.to_numeric(df[col], errors="coerce")
 
-# Filtro por F1 Score mínimo
-min_f1 = st.slider("🎯 Filtrar combinaciones con F1 Score mínimo:", 0.0, 1.0, 0.7, 0.01)
+# 🎯 Filtro por F1
+min_f1 = st.slider("🎯 F1 Score mínimo:", 0.0, 1.0, 0.7, 0.01)
 filtered_df = df[df["f1_score"] >= min_f1]
 
 st.write(f"Mostrando {len(filtered_df)} combinaciones con F1 Score ≥ {min_f1}")
 st.dataframe(filtered_df.sort_values(by="f1_score", ascending=False).head(20), use_container_width=True)
 
-# Gráfico top 10
+# 📈 Gráfico
 st.subheader("📈 Top 10 combinaciones por F1 Score")
 top_10 = filtered_df.sort_values(by="f1_score", ascending=False).head(10)
 
