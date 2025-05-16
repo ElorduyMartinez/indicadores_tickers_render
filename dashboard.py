@@ -3,32 +3,29 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import tempfile
 
-# Configuración de la página
-st.set_page_config(layout="wide", page_title="Dashboard de Indicadores Técnicos")
+# Configuración
+st.set_page_config(layout="wide", page_title="Dashboard de Indicadores")
 st.title("📊 Análisis de Combinaciones de Indicadores Técnicos")
 
-# Definir la ruta absoluta de la carpeta 'data'
-DATA_DIR = os.path.join(os.getcwd(), "data")
+# Usar carpeta temporal compatible con Render
+DATA_DIR = os.path.join(tempfile.gettempdir(), "data")
 
-# Intentar crear la carpeta 'data' si no existe
-try:
-    os.makedirs(DATA_DIR, exist_ok=True)
-except Exception as e:
-    st.error(f"❌ No se pudo crear la carpeta '{DATA_DIR}': {e}")
-    st.stop()
+# Asegurarse de que exista
+os.makedirs(DATA_DIR, exist_ok=True)
 
-# Intentar listar los archivos CSV en la carpeta
+# Verificar archivos
 try:
     csv_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".csv")]
 except Exception as e:
-    st.error(f"❌ Error al listar archivos en '{DATA_DIR}': {e}")
+    st.error(f"❌ Error accediendo a {DATA_DIR}: {e}")
     st.stop()
 
-# Si no hay CSVs, muestra un aviso y detén la app
 if not csv_files:
-    st.warning("⚠️ No hay archivos CSV todavía. Ejecuta combinador.py o espera que el workflow los genere.")
+    st.warning("⚠️ No hay archivos CSV. Ejecuta combinador.py o espera que GitHub los genere.")
     st.stop()
+
 
 # Selector de archivo
 file_selected = st.selectbox("📁 Selecciona un activo:", csv_files)
