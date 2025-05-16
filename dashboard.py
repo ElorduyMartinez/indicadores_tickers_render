@@ -3,35 +3,29 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
-import tempfile
 
-# Configuración
-st.set_page_config(layout="wide", page_title="Dashboard de Indicadores")
+# Configurar página
+st.set_page_config(layout="wide", page_title="Dashboard de Indicadores Técnicos")
 st.title("📊 Análisis de Combinaciones de Indicadores Técnicos")
 
-# Usar carpeta temporal compatible con Render
-DATA_DIR = os.path.join(tempfile.gettempdir(), "data")
+# Ruta de datos (ya existe gracias a .gitkeep)
+DATA_DIR = "data"
 
-# Asegurarse de que exista
-os.makedirs(DATA_DIR, exist_ok=True)
-
-# Verificar archivos
-try:
-    csv_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".csv")]
-except Exception as e:
-    st.error(f"❌ Error accediendo a {DATA_DIR}: {e}")
+if not os.path.exists(DATA_DIR):
+    st.error("❌ La carpeta 'data/' no existe. Verifica que esté en tu repositorio.")
     st.stop()
+
+csv_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".csv")]
 
 if not csv_files:
-    st.warning("⚠️ No hay archivos CSV. Ejecuta combinador.py o espera que GitHub los genere.")
+    st.warning("⚠️ No hay archivos CSV todavía. Ejecuta combinador.py o espera que el workflow los genere.")
     st.stop()
-
 
 # Selector de archivo
 file_selected = st.selectbox("📁 Selecciona un activo:", csv_files)
 df = pd.read_csv(os.path.join(DATA_DIR, file_selected))
 
-# Convertir a numérico las métricas, por si acaso vienen como string
+# Asegurar que las columnas métricas sean numéricas
 for col in ["accuracy", "precision", "recall", "f1_score"]:
     df[col] = pd.to_numeric(df[col], errors="coerce")
 
@@ -40,11 +34,9 @@ min_f1 = st.slider("🎯 Filtrar combinaciones con F1 Score mínimo:", 0.0, 1.0,
 filtered_df = df[df["f1_score"] >= min_f1]
 
 st.write(f"Mostrando {len(filtered_df)} combinaciones con F1 Score ≥ {min_f1}")
-
-# Mostrar tabla de resultados (ordenada)
 st.dataframe(filtered_df.sort_values(by="f1_score", ascending=False).head(20), use_container_width=True)
 
-# Gráfico de barras para las 10 mejores combinaciones
+# Gráfico top 10
 st.subheader("📈 Top 10 combinaciones por F1 Score")
 top_10 = filtered_df.sort_values(by="f1_score", ascending=False).head(10)
 
